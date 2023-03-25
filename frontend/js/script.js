@@ -1,47 +1,47 @@
-const messages = document.getElementById('messages');
-const messageInput = document.getElementById('message-input');
-const messageForm = document.getElementById('message-form');
+const messageForm = document.getElementById("message-form");
+const messageInput = document.getElementById("message-input");
+const messages = document.getElementById("messages");
 
-const socket = new WebSocket('ws://localhost:8000/ws');
+// Connect to WebSocket
+const ws = new WebSocket("ws://localhost:8000/ws");
 
 // WebSocket message types
 const MessageTypeChat = 0;
 const MessageTypeSignal = 1;
 
-socket.onmessage = (event) => {
-    const msgData = JSON.parse(event.data);
-    const messageElement = document.createElement('div');
-    messageElement.textContent = `${msgData.sender} (${msgData.timestamp}): ${msgData.message}`;
-    messages.appendChild(messageElement);
-    messages.scrollTop = messages.scrollHeight;
-};
+ws.addEventListener("open", (event) => {
+  console.log("WebSocket connection opened:", event);
+});
 
-socket.onopen = () => {
-    console.log('Connected to the server.');
-};
+ws.addEventListener("message", (event) => {
+  const chatMessage = JSON.parse(event.data);
+  displayMessage(chatMessage.sender, chatMessage.message, chatMessage.timestamp);
+});
 
-socket.onclose = () => {
-    console.log('Disconnected from the server.');
-};
+function displayMessage(sender, message, timestamp) {
+  const messageContainer = document.createElement("div");
+  messageContainer.innerHTML = `<b>${sender}:</b> ${message} <i>(${timestamp})</i>`;
+  messages.appendChild(messageContainer);
+}
 
-messageForm.addEventListener('submit', (event) => {
-    event.preventDefault();
+messageForm.addEventListener("submit", (event) => {
+  event.preventDefault();
 
-    if (messageInput.value.trim() === '') {
-        return;
-    }
+  const messageText = messageInput.value.trim();
+  if (!messageText) return;
 
-    socket.send(JSON.stringify({ type: MessageTypeChat, payload: {
-        sender: "Your_Sender_Name",
-        message: messageInput.value,
-        timestamp: new Date().toISOString()
-      } }));
+  const messageData = {
+    type: MessageTypeChat,
+    payload: {
+      sender: "Your_Sender_Name",
+      message: messageText,
+      timestamp: new Date().toISOString(),
+    },
+  };
 
-    console.log("msg:"+ JSON.stringify({ type: MessageTypeChat, payload: {
-        sender: "Your_Sender_Name",
-        message: messageInput.value,
-        timestamp: new Date().toISOString()
-      } }));
+  ws.send(JSON.stringify(messageData));
 
-    messageInput.value = '';
+  displayMessage("You", messageText, new Date().toLocaleTimeString());
+
+  messageInput.value = "";
 });
