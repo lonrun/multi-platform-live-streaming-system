@@ -130,7 +130,8 @@ func (s *Server) Run(addr string) error {
 	return s.engine.Run(addr)
 }
 
-// handleChatMessage function handles incoming chat messages and broadcasts them to all clients
+// handleChatMessage processes incoming chat messages and sends them to all connected clients,
+// except for the sender.
 func handleChatMessage(clients map[string]*websocket.Conn, msgData map[string]interface{}, senderConn *websocket.Conn) {
 	if msgData == nil {
 		log.Println("empty data recv")
@@ -138,14 +139,23 @@ func handleChatMessage(clients map[string]*websocket.Conn, msgData map[string]in
 	}
 
 	log.Printf("Recv chat:%v\n", msgData)
-	msgBytes, err := json.Marshal(ChatMessage{
+	chatMessage := ChatMessage{
 		Sender:    msgData["sender"].(string),
 		Message:   msgData["message"].(string),
 		Timestamp: msgData["timestamp"].(string),
-	})
+	}
+
+	wsMessage := WebSocketMessage{
+		Type: MessageTypeChat,
+		Data: make(map[string]interface{}),
+	}
+	wsMessage.Data["payload"] = chatMessage
+
+	msgBytes, err := json.Marshal(wsMessage)
 	if err != nil {
 		return
 	}
+
 	// Send the chat message to all connected clients
 	for _, client := range clients {
 		if client != senderConn {
