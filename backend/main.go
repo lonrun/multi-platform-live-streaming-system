@@ -2,18 +2,17 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net/http"
 
-	"github.com/user/multi-platform-live-streaming-system/backend/server"
+	"github.com/lonrun/multi-platform-live-streaming-system/backend/server"
 )
 
 func main() {
-	http.HandleFunc("/", server.HandleConnections)
+	s, err := server.NewServer()
+	if err != nil {
+		fmt.Printf("Error creating server: %v\n", err)
+		return
+	}
 
 	fmt.Println("Starting server at :8000")
-	err := http.ListenAndServe(":8000", nil)
-	if err != nil {
-		log.Fatalf("Failed to start server: %s", err.Error())
-	}
+	s.Run(":8000")
 }
